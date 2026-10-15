@@ -588,3 +588,7 @@ IsSafeHeadChunk = 0x00371870; // type:func size:0x40
 IsSafeProgChunk = 0x003718B0; // type:func size:0x40
 IsSafeSmplChunk = 0x003718F0; // type:func size:0x40
 IsSafeVagiChunk = 0x00371930; // type:func size:0x40
+strncmp = 0x00355708; // type:func size:0x1B8
+GetNumSplit = 0x00371970; // type:func size:0xE0
+GetPhdParam = 0x00371A50; // type:func size:0x1C0
+CalcPhdParam = 0x00371C10; // type:func size:0x2B0
