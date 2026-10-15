@@ -3,6 +3,9 @@
 
 The debug ELF's symbol list is reused where an address is still a function
 start. Unique string literals then name retail functions that reference them.
+C string literals are cut at the first NUL so padded CRI messages match the
+ELF. A `jr ra` / stack-restore / stack-alloc sequence splits functions that
+splat merged, and the string is attached to that piece.
 """
 
 from __future__ import annotations
@@ -19,7 +22,8 @@ OUT_DIR = ROOT / "config/retail/symbols"
 
 LOAD_VADDR = 0x100000
 LOAD_OFF = 0x80
-MIN_STR = 10
+CODE_END = 0x373780
+MIN_STR = 6
 
 SYM_RE = re.compile(
     r"^([A-Za-z_.$][\w.$]*)\s*=\s*(0x[0-9A-Fa-f]+)\s*;\s*(?://\s*(.*))?$"
@@ -73,9 +77,12 @@ def c_string_owners() -> dict[str, set[str]]:
                     value = bytes(raw, "utf-8").decode("unicode_escape")
                 except UnicodeDecodeError:
                     value = raw
+                # CRI literals are often padded with \0 so the rodata word-aligns.
+                # The bytes in the ELF stop at the first NUL.
+                value = value.split("\x00", 1)[0].rstrip("\r\n\t")
                 if len(value) < MIN_STR or current is None:
                     continue
-                if not value.isascii():
+                if not value.isascii() or any(ord(ch) < 32 for ch in value):
                     continue
                 owners.setdefault(value, set()).add(current)
     return owners
@@ -133,6 +140,31 @@ def references(blob: bytes, addresses: set[int]) -> dict[int, set[int]]:
     return hits
 
 
+def inner_prologues(blob: bytes) -> list[int]:
+    """Starts splat merged into the previous function.
+
+    Retail MW code often ends with `jr ra` / `addiu sp, sp, +N` and the next
+    function begins `addiu sp, sp, -N`. splat's analyzer keeps those as one
+    function. The new start is only used to place a string on the right one.
+    """
+    code = blob[LOAD_OFF : LOAD_OFF + (CODE_END - LOAD_VADDR)]
+    words = [
+        int.from_bytes(code[i : i + 4], "little") for i in range(0, len(code) - 3, 4)
+    ]
+    found = []
+    for index in range(len(words) - 3):
+        if words[index] != 0x03E00008:
+            continue
+        restore, alloc = words[index + 1], words[index + 2]
+        if (restore >> 16) != 0x27BD or (alloc >> 16) != 0x27BD:
+            continue
+        imm_restore, imm_alloc = restore & 0xFFFF, alloc & 0xFFFF
+        if imm_restore == 0 or imm_restore >= 0x8000 or imm_alloc < 0x8000:
+            continue
+        found.append(LOAD_VADDR + (index + 2) * 4)
+    return found
+
+
 def function_at(functions: dict[int, int], vaddr: int) -> int | None:
     # Functions are dense enough for a linear scan of the sorted keys once.
     prev = None
@@ -187,20 +219,29 @@ def main() -> None:
             continue
         candidates.append((vaddr, next(iter(funcs)), text))
 
+    # String homes use epilogue splits. Overlap names above stay on splat's starts.
+    refined_starts = sorted(set(ordered) | set(inner_prologues(blob)))
+    refined: dict[int, int] = {}
+    for index, start in enumerate(refined_starts):
+        nxt = refined_starts[index + 1] if index + 1 < len(refined_starts) else CODE_END
+        if start < CODE_END:
+            refined[start] = max(nxt - start, 4)
+    refined = dict(sorted(refined.items()))
+
     refs = references(blob, {vaddr for vaddr, _, _ in candidates})
     named_from_strings = []
     for vaddr, func_name, text in candidates:
         sites = refs.get(vaddr, set())
-        homes = {function_at(ordered, site) for site in sites}
+        homes = {function_at(refined, site) for site in sites}
         homes.discard(None)
         if len(homes) != 1:
             continue
         home = next(iter(homes))
-        if home in used_addr:
+        if home in used_addr or home >= CODE_END:
             continue
         used_addr[home] = func_name
         named_from_strings.append(
-            f"{func_name} = {home:#010x}; // type:func size:{ordered[home]:#x} string:{text[:60]!r}"
+            f"{func_name} = {home:#010x}; // type:func size:{refined[home]:#x} string:{text[:60]!r}"
         )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
