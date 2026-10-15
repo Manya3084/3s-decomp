@@ -949,3 +949,5 @@ ppgWriteQuadWithST_A = 0x0032C100; // type:func size:0x40
 ppgWriteQuadWithST_A2 = 0x0032C140; // type:func size:0x40
 ppgWriteQuadOnly = 0x0032C180; // type:func size:0xF0
 ppgWriteQuadOnly2 = 0x0032C270; // type:func size:0xC0
+ppgWriteQuadWithST_B = 0x0032C330; // type:func size:0x110
+ppgWriteQuadWithST_B2 = 0x0032C440; // type:func size:0x110
