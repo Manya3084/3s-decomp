@@ -21,11 +21,14 @@ ASM_DIR := asm/$(VERSION)
 INCLUDE_DIR := include
 CONFIG_DIR := config/$(VERSION)
 TOOLS_DIR := tools
-EEGCC_PATHS := PATH=$(BIN_DIR)/ee/bin:$(BIN_DIR)/lib/gcc-lib/ee/2.96-ee-001003-1
+EE_FORKWRAP := $(BIN_DIR)/ee-forkwrap.so
+# Relative path: LD_PRELOAD splits on spaces, and this tree may live in one.
+EEGCC_PATHS := LD_PRELOAD=$(EE_FORKWRAP) PATH=$(BIN_DIR)/ee/bin:$(BIN_DIR)/lib/gcc-lib/ee/2.96-ee-001003-1
 
 # Tools
 
 WIBO := $(BIN_DIR)/wibo
+DTK := $(BIN_DIR)/dtk
 MWCCPS2 := $(BIN_DIR)/mwccps2.exe
 MWLDPS2 := MWCIncludes=$(BIN_DIR) $(WIBO) $(BIN_DIR)/mwldps2.exe
 
@@ -34,10 +37,18 @@ EEGCC := $(BIN_DIR)/ee/bin/gcc
 CCPS2 := MWCIncludes=$(BIN_DIR) $(WIBO) $(MWCCPS2)
 
 CC := $(CCPS2)
-AS := mipsel-linux-gnu-as
+# Prefer a distro assembler. Arch has none, so setup_tools drops one in bin/.
+SYS_AS := $(shell command -v mipsel-linux-gnu-as 2>/dev/null)
+ifneq ($(SYS_AS),)
+AS := $(SYS_AS)
+else
+AS := $(abspath $(BIN_DIR)/mipsel-linux-gnu-as)
+endif
 LD := $(MWLDPS2)
 
-PYTHON := python3
+PYTHON := $(shell if [ -x .venv/bin/python3 ]; then echo .venv/bin/python3; else echo python3; fi)
+# Retail SLUS-20949 v1.02 THIRD/THIRD_U.BIN does not match. This is the debug ELF.
+EXPECTED_SHA1 := cf58495054c31ad852175c66e9ca04d5094f000e
 SPLICE_ELF := $(PYTHON) $(TOOLS_DIR)/splice_elf.py
 COMPARE_BYTES := $(PYTHON) $(TOOLS_DIR)/compare_bytes.py
 PATCH_ALIGNMENT := $(PYTHON) $(TOOLS_DIR)/patch_alignment.py
@@ -83,12 +94,35 @@ LINKER_SCRIPT := $(BUILD_DIR)/$(MAIN).lcf
 
 COMPILER_TAR := mwcps2-3.0b38-030307.tar.gz
 EE_COMPILER_TAR := ee-gcc2.96.tar.xz
+DTK_TAG := v1.8.4
 
 build: $(MAIN_TARGET)
 
 # Etc. rules
 
+decrypt:
+	@test -f encrypted.bin || { echo "missing encrypted.bin"; exit 1; }
+	@pass="$${BIN_PASSWORD:-}"; \
+	if [ -z "$$pass" ] && [ -f .bin-password ]; then pass=$$(head -n 1 .bin-password); fi; \
+	if [ -z "$$pass" ]; then echo "Set BIN_PASSWORD or write it in .bin-password"; exit 1; fi; \
+	openssl enc -d -aes-256-cbc -in encrypted.bin -out $(MAIN) -pass pass:"$$pass"
+	@got=$$(sha1sum $(MAIN) | awk '{print $$1}'); \
+	if [ "$$got" != "$(EXPECTED_SHA1)" ]; then \
+		echo "decrypted file sha1 $$got"; \
+		echo "expected $(EXPECTED_SHA1)"; \
+		exit 1; \
+	fi
+	@echo "decrypted $(MAIN)"
+
 split:
+	@test -f $(MAIN) || { echo "missing $(MAIN)"; echo "The matched file is the debug ELF, sha1 $(EXPECTED_SHA1). See docs/builde-guide.md."; exit 1; }
+	@got=$$(sha1sum $(MAIN) | awk '{print $$1}'); \
+	if [ "$$got" != "$(EXPECTED_SHA1)" ]; then \
+		echo "$(MAIN) sha1 $$got"; \
+		echo "expected $(EXPECTED_SHA1)"; \
+		echo "The retail disc file is a different build. See docs/builde-guide.md."; \
+		exit 1; \
+	fi
 	@mkdir -p $(dir $(LINKER_SCRIPT))
 	$(GENERATE_LCF) $(LINKER_SCRIPT)
 
@@ -113,31 +147,44 @@ $(MAIN_TARGET): $(ALL_O_FILES) $(LINKER_SCRIPT)
 
 $(BUILD_DIR)/%.s.o: %.s
 	@mkdir -p $(dir $@)
-	$(AS) $(AS_FLAGS) -o $@ $<
+	"$(AS)" $(AS_FLAGS) -o $@ $<
 	$(PATCH_ALIGNMENT) $@
 
 $(BUILD_DIR)/%.c.o: %.c
 	@mkdir -p $(dir $@)
-	python3 tools/mwccgap/mwccgap.py $< $@ --mwcc-path $(MWCCPS2) --macro-inc-path $(INCLUDE_DIR)/macro.inc --use-wibo --wibo-path $(WIBO) --as-march r5900 --as-mabi eabi --target-encoding shift_jis $(MWCCPS2_FLAGS)
+	$(PYTHON) tools/mwccgap/mwccgap.py $< $@ --mwcc-path $(MWCCPS2) --macro-inc-path $(INCLUDE_DIR)/macro.inc --use-wibo --wibo-path $(WIBO) --as-path "$(AS)" --as-march r5900 --as-mabi eabi --target-encoding shift_jis $(MWCCPS2_FLAGS)
 	$(PATCH_ALIGNMENT) $@
 
+$(CRI_O_FILES): $(EE_FORKWRAP)
 $(CRI_O_FILES): $(BUILD_DIR)/%.c.o: %.c
 	@mkdir -p $(dir $@)
 	$(EEGCC_PATHS) $(EEGCC) $< -o $@ $(EEGCC_FLAGS)
 
 $(ZLIB_O_FILES): $(BUILD_DIR)/%.c.o: %.c
 	@mkdir -p $(dir $@)
-	python3 tools/mwccgap/mwccgap.py $< $@ --mwcc-path $(MWCCPS2) --macro-inc-path $(INCLUDE_DIR)/macro.inc --use-wibo --wibo-path $(WIBO) --as-march r5900 --as-mabi eabi --target-encoding shift_jis $(MWCCPS2_ZLIB_FLAGS)
+	$(PYTHON) tools/mwccgap/mwccgap.py $< $@ --mwcc-path $(MWCCPS2) --macro-inc-path $(INCLUDE_DIR)/macro.inc --use-wibo --wibo-path $(WIBO) --as-path "$(AS)" --as-march r5900 --as-mabi eabi --target-encoding shift_jis $(MWCCPS2_ZLIB_FLAGS)
 	$(PATCH_ALIGNMENT) $@
 
 # Tools
 
-setup_tools: $(MWCCPS2) $(WIBO) $(EEGCC)
+setup_tools: $(MWCCPS2) $(WIBO) $(EEGCC) $(EE_FORKWRAP) $(DTK) $(if $(SYS_AS),,$(BIN_DIR)/mipsel-linux-gnu-as)
+
+$(EE_FORKWRAP): $(TOOLS_DIR)/ee-forkwrap.S
+	@mkdir -p $(BIN_DIR)
+	gcc -m32 -shared -fPIC -nostdlib -o $@ $<
+
+$(BIN_DIR)/mipsel-linux-gnu-as:
+	$(TOOLS_DIR)/fetch_mips_as.sh
 
 $(WIBO):
 	@mkdir -p $(BIN_DIR)
 	wget -O $@ https://github.com/decompals/wibo/releases/download/0.6.13/wibo
 	chmod +x $(WIBO)
+
+$(DTK):
+	@mkdir -p $(BIN_DIR)
+	wget -O $@ https://github.com/encounter/decomp-toolkit/releases/download/$(DTK_TAG)/dtk-linux-x86_64
+	chmod +x $(DTK)
 
 $(MWCCPS2):
 	@mkdir -p $(BIN_DIR)
@@ -146,3 +193,36 @@ $(MWCCPS2):
 $(EEGCC):
 	@mkdir -p $(BIN_DIR)
 	wget -O- https://github.com/decompme/compilers/releases/download/compilers/$(EE_COMPILER_TAR) | tar xJv -C $(BIN_DIR)
+	ln -sfn ../lib $(BIN_DIR)/ee/lib
+
+# Retail disc ELF. Independent of the encrypted debug build.
+RETAIL_ELF := THIRD_U.BIN.retail
+RETAIL_BUILD := build/retail
+RETAIL_LD := config/retail/link.ld
+RETAIL_MIPS_LD := $(BIN_DIR)/mipsel-linux-gnu-ld
+RETAIL_OUT := $(RETAIL_BUILD)/THIRD_U.BIN
+
+split-retail: $(RETAIL_BUILD)/equates.stamp
+
+$(RETAIL_BUILD)/split.stamp: config/retail/sfiii.retail.yaml config/retail/symbols/funcs.txt $(RETAIL_ELF)
+	@mkdir -p $(RETAIL_BUILD)
+	$(PYTHON) -m splat split config/retail/sfiii.retail.yaml
+	@touch $@
+
+$(RETAIL_BUILD)/equates.stamp: $(RETAIL_BUILD)/split.stamp tools/retail_equates.py
+	$(PYTHON) tools/retail_equates.py
+	@touch $@
+
+build-retail: $(RETAIL_OUT)
+
+$(RETAIL_BUILD)/text.o: $(RETAIL_BUILD)/equates.stamp
+	@mkdir -p $(RETAIL_BUILD)
+	cat asm/retail/split/equates.s asm/retail/split/text.labeled.s | "$(AS)" $(AS_FLAGS) -o $@
+
+$(RETAIL_BUILD)/payload.o: $(RETAIL_BUILD)/split.stamp asm/retail/split/data/payload.s
+	@mkdir -p $(RETAIL_BUILD)
+	"$(AS)" $(AS_FLAGS) -o $@ asm/retail/split/data/payload.s
+
+$(RETAIL_OUT): $(RETAIL_BUILD)/text.o $(RETAIL_BUILD)/payload.o $(RETAIL_LD) $(RETAIL_MIPS_LD)
+	$(RETAIL_MIPS_LD) -m elf32ltsmip -EL -T $(RETAIL_LD) -o $@ $(RETAIL_BUILD)/text.o $(RETAIL_BUILD)/payload.o
+	$(PYTHON) tools/compare_retail.py $@

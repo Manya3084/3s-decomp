@@ -17,6 +17,12 @@ __pycache__
 SLPM_656.21*
 SLUS_209.49*
 THIRD_U.BIN*
+encrypted.bin
+.bin-password
+SF33RD.AFS
+*.7z
+*.xbe
+*.chd
 
 assets
 asm

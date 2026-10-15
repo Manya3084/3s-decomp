@@ -6,7 +6,7 @@ This article will guide you through the process of decompiling an assembly file 
 
 0. Be sure to follow the [build guide](https://github.com/apstygo/sfiii-decomp/wiki/Building) first.
 1. Run `make split` to generate the assembly files.
-2. Download [decomp-toolkit](https://github.com/encounter/decomp-toolkit) and run `dtk dwarf dump THIRD_U.BIN`. The output of this command contains a lot of useful info, such as function signatures, argument registers, memory addresses and local variables.
+2. `make setup_tools` downloads [decomp-toolkit](https://github.com/encounter/decomp-toolkit) 1.8.4 to `bin/dtk`. Run `bin/dtk dwarf dump THIRD_U.BIN`. The output contains function signatures, argument registers, memory addresses and local variables. This needs the debug ELF (the one with a `.debug` section). The retail disc `THIRD_U.BIN` has no DWARF, and the command fails with `Failed to locate .debug section`.
 3. (Optional) Use `tools/dump_lines.py` to extract line information. This may come in handy if you can't figure something out. For instructions on how to use the tool check the docstring inside the script.
 
 ## Choosing a file/function to decompile

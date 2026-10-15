@@ -1,0 +1,48 @@
+# Retail SLUS-20949 v1.02 THIRD/THIRD_U.BIN.
+# This is the disc ELF, not the debug build the anniversary config matches.
+# Code ends at file 0x273800 (vram 0x373780): the last jr $ra is at 0x373770
+# and the next word is padding. A later island of real code sits in the data
+# image around vram 0x3C5CC0 and stays inside the payload blob for now.
+options:
+  basename: THIRD_U.BIN
+  base_path: ../..
+  target_path: THIRD_U.BIN.retail
+  platform: ps2
+  compiler: GCC
+  asm_path: asm/retail/split
+  src_path: src/retail
+  asset_path: assets/retail
+  build_path: build/retail
+  ld_script_path: build/retail/THIRD_U.BIN.ld
+  symbol_addrs_path:
+    - config/retail/symbols/funcs.txt
+  undefined_funcs_auto_path: config/retail/undefined_funcs_auto.txt
+  undefined_syms_auto_path: config/retail/undefined_syms_auto.txt
+  find_file_boundaries: False
+  section_order: [".text", ".data", ".rodata", ".bss"]
+  subalign: null
+  migrate_rodata_to_functions: False
+  rodata_string_guesser_level: 0
+  asm_jtbl_label_macro: jlabel
+  asm_data_macro: dlabel
+  asm_inc_header: |
+    .set noat      /* allow manual use of $at */
+    .set noreorder /* don't insert nops after branches */
+
+sha1: 956d55c010c9eea37f264ceeb4c8d860d4a7d4a2
+
+segments:
+  - [0x0, pad]
+
+  - name: main
+    type: code
+    start: 0x00000080
+    vram: 0x00100000
+    bss_size: 0x16DA80 # p_memsz - p_filesz
+    subalign: 4
+    subsegments:
+      - [0x000080, asm, text]
+      - [0x273800, databin, payload]
+      - [0x3D5D00]
+
+  - [0x3D5D00]
