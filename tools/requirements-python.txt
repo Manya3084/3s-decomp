@@ -3,7 +3,7 @@ tqdm
 watchdog
 levenshtein
 cxxfilt
-dataclasses
+dataclasses; python_version < "3.7"
 pyelftools
 graphviz
 tabulate

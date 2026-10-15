@@ -1,36 +1,33 @@
-# Builde guide
+# Build guide
+
+The binary this tree can rebuild and check is the US retail disc ELF. The anniversary debug ELF is a different file, and its password is not in this repository.
+
+## Retail binary
+
+Copy `THIRD/THIRD_U.BIN` from the US PlayStation 2 disc **SLUS-20949 v1.02** (Street Fighter Anniversary Collection) to the repository root as `THIRD_U.BIN.retail`. Do not commit that file.
+
+| | |
+| --- | --- |
+| Disc path | `THIRD/THIRD_U.BIN` |
+| Local name | `THIRD_U.BIN.retail` |
+| Size | 4,021,936 bytes (`0x3D5EB0`) |
+| SHA-256 | `b609c9ab16561696deeb05133f897f68959c8e1e5ea1998e5c212960f0b32a74` |
+| SHA-1 | `956d55c010c9eea37f264ceeb4c8d860d4a7d4a2` |
+
+```bash
+sha256sum -c <<< 'b609c9ab16561696deeb05133f897f68959c8e1e5ea1998e5c212960f0b32a74  THIRD_U.BIN.retail'
+```
+
+The file is a plain ELF32 MIPS executable. Entry `0x100008`. The load starts at file offset `0x80`, vaddr `0x00100000`, filesz `0x3D5C80`, memsz `0x543700`. `.symtab` is empty. There is no `.mdebug`, `.eh_frame`, or `.debug`, so `bin/dtk dwarf dump` cannot read it. It is not a KELF. The `.comment` stamp is `MW MIPS C Compiler (2.4.1.01)`.
 
 ## Cloning
 
 ```bash
-git clone --recurse-submodules https://github.com/crowded-street/3s-decomp
+git clone --recurse-submodules https://github.com/Manya3084/3s-decomp
+cd 3s-decomp
 ```
 
 ## Setting up the environment
-
-### Linux
-
-1. Enable i386 architecture support and install packages.
-
-    ```bash
-    sudo dpkg --add-architecture i386
-    sudo apt-get update
-    sudo apt-get install -y $(cat tools/requirements-debian.txt)
-    ```
-
-2. Install Python dependencies.
-
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r tools/requirements-python.txt
-    ```
-
-3. Download build tools.
-
-    ```bash
-    make setup_tools
-    ```
 
 ### Arch Linux
 
@@ -44,67 +41,63 @@ pip install -r tools/requirements-python.txt
 make setup_tools
 ```
 
-`make` uses `.venv/bin/python3` when that directory exists.
+`make` uses `.venv/bin/python3` when that directory exists. Python 3.14 does not need the `dataclasses` backport; `tools/requirements-python.txt` skips that pin on 3.7 and newer.
+
+### Debian and Ubuntu
+
+```bash
+sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo apt-get install -y $(cat tools/requirements-debian.txt)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r tools/requirements-python.txt
+make setup_tools
+```
 
 ### macOS
 
-1. Use the provided Dockerfile.
+Use the Dockerfile. The container is Linux, and the retail steps below are the same once you are inside it.
 
-    ```bash
-    docker build --tag sfiii-build:latest --build-arg USER=$USER .
-    docker run --rm -it -v $(pwd):/sfiii sfiii-build /bin/bash
-    ```
+```bash
+docker build --tag sfiii-build:latest --build-arg USER=$USER .
+docker run --rm -it -v "$(pwd)":/sfiii sfiii-build /bin/bash
+source /tools/.venv/bin/activate
+make setup_tools
+```
 
-2. Activate Python venv.
+## Matching the retail disc
 
-    ```bash
-    source /tools/.venv/bin/activate
-    ```
-
-3. Download build tools.
-
-    ```bash
-    make setup_tools
-    ```
-
-## Building
-
-1. Put the matched `THIRD_U.BIN` in the root folder. Its SHA1 is `cf58495054c31ad852175c66e9ca04d5094f000e`.
-
-    That file is the debug ELF (about 18 MB, with DWARF). It used to be checked in as `encrypted.bin` and decrypted in CI with a private password. Commit `be9b9bc` removed both the ciphertext and the workflow.
-
-    The retail US disc file is a different build. `THIRD/THIRD_U.BIN` from SLUS-20949 v1.02 is SHA1 `956d55c010c9eea37f264ceeb4c8d860d4a7d4a2`, 4,021,936 bytes, and has no DWARF. Keep that file as `THIRD_U.BIN.retail`. `make split` rejects it.
-
-    `encrypted.bin` from git history (commit `afd91f6`, removed in `be9b9bc`) is that debug ELF, AES-256-CBC, OpenSSL salted. Decrypt it with the CI password, which is not in the repo:
-
-    ```bash
-    # password in the environment, or one line in .bin-password
-    make decrypt
-    ```
-
-2. Run `splat`.
-
-    ```bash
-    make split
-    ```
-
-3. Build.
-
-    ```bash
-    make build -j
-    ```
-
-If everything's okay you'll see the message `Files match ✅`.
-
-## Retail disc
-
-`make split` and `make build` match the debug ELF above. The US disc file is a smaller optimized build. Keep it as `THIRD_U.BIN.retail` (SHA1 `956d55c010c9eea37f264ceeb4c8d860d4a7d4a2`).
+With `THIRD_U.BIN.retail` in the root:
 
 ```bash
 make build-retail
 ```
 
-That splits `config/retail/sfiii.retail.yaml`, assembles the code with the vendored mipsel binutils, links `build/retail/THIRD_U.BIN`, and checks the load image. Success prints `load image matches THIRD_U.BIN.retail`. The disc ELF has no DWARF, so `dtk dwarf dump` still needs the debug ELF.
+That splits `config/retail/sfiii.retail.yaml`, assembles the code with the vendored mipsel binutils, links `build/retail/THIRD_U.BIN`, and checks the load image. Success prints:
+
+```text
+load image matches THIRD_U.BIN.retail (0x3d5c80 bytes)
+```
+
+GNU ld warns that the load segment is readable, writable, and executable. That warning is expected. The rebuilt ELF header flags differ from the disc by 1. `tools/compare_retail.py` compares the load image, not that header.
+
+Retail names live in `config/retail/symbols/funcs.txt` as `Name = 0x00ADDR; // type:func size:0xNN`. A name belongs there when the disc body matches the C in this tree. A shared address with `config/anniversary/symbols/` is not a retail name. See [decompiling.md](decompiling.md).
+
+## Anniversary debug ELF
+
+`make split` and `make build` expect a different file, `THIRD_U.BIN`, SHA-1 `cf58495054c31ad852175c66e9ca04d5094f000e`. That is the unoptimized anniversary ELF (about 18 MB, with DWARF). It used to be checked in as `encrypted.bin` and decrypted in CI. Commit `be9b9bc` removed the ciphertext and the workflow. The password is not in this repository, so those two targets cannot match here.
+
+`make split` rejects `THIRD_U.BIN.retail`. Do not rename the retail file to `THIRD_U.BIN`.
+
+If you already have the debug ELF and its SHA-1 matches, `make decrypt` is unnecessary. Put the file at `THIRD_U.BIN`, then:
+
+```bash
+make split
+make build -j
+```
+
+A match prints `Files match ✅`.
 
 The retail Xbox `sf33rd.xbe` is a Release build. Its debug path is `d:\ac_work\bloom_projects\StreetFighterAnniversaryCollection_20040826v00\sf33rd\Project\SF33rdACR for XBOX\Release\sf33rd.exe`, and the matching PDB is not on the disc. Assert paths in that XBE name `sf33rd/Source/Game/Game.c`, `netm.c`, `rebattle.c`, `sf33rd/AcrSDK/xbox/base/`, and `sf33rd/Source/XBOX/xlive/`. Those filename strings are not in the PS2 ELF, so they do not add PS2 addresses. Shader CVS metadata on the Xbox tree points at `kawamura@cvs13f0:/home/cvs/3`.
 
@@ -200,4 +193,4 @@ The CapSndEng calls continue in address order after `CalcPhdParam`. `0x10000000`
 
 `ADX_GetCoefficient` at `0x334FC0` computes the two Q12 coefficients. It takes the hardware square root of `2.0f`, calls `0x113020` for the cosine of `2 * pi * highpass / sample_rate` (`0x40C90FDA`), and stores `2 * r * 4096` and `-r * r * 4096`. A NaN result calls `0x1132F0`. `ADX_DecodeSte4` at `0x336A78` reads the word at `0x4070C0`. Zero tails `0x336730` and any other value tails `0x336368`. `ADXERR_Init` at `0x336AE8` and `ADXERR_Finish` at `0x336B20` are byte-identical: they clear 256 bytes at `0x4070D0` and the words at `0x4070C8` and `0x4070CC`. `ADXERR_EntryErrFunc` stores the callback and object there, then tails `0x34EED0`. `ADXERR_CallErrFunc2` at `0x336BD8` copies both strings into that 256-byte buffer and tails `0x34E920`, the same tail as `ADXERR_CallErrFunc1`. `ADXERR_ItoA` at `0x336C48` divides by 10, with the divide-by-zero break, then copies the buffer at `0x619FC8` in reverse. `ADXERR_ItoA2` at `0x336D50` calls it twice and inserts the space at `0x4B8198`. `ADXF_Ocbi` at `0x336DD8` tails `0x1039D8` with `buf + bsize - 1`. `ADXF_Init` at `0x336DF8` loads the build pointer at `0x4071D0` and, when `adxf_init_cnt` at `0x4071D4` is 0, clears `adxf_obj` at `0x4071D8` (`1088` bytes), `adxf_ptinfo` at `0x407618` (`1024` bytes), the history at `0x407A20` (`256` bytes of `0xFF`), and the call counts at `0x407B20` (`32` bytes). It stores 0 at `0x407A18`, `0x407B40`, `0x407B44`, and `0x407B48`, and stores -1 at `0x407B4C`. `ADXF_Finish` at `0x336EC0` decrements that counter and, when it reaches 0, calls `0x337EB0` and clears the same objects in reverse. `ADXF_CALC_BYTE2SCT` at `0x336F80` divides by `2048` and rounds a positive remainder up. `adxf_SetCmdHstry` at `0x336FA8` records one 16-byte history slot at `0x407A20` and increments `adxf_cmd_ncall` at `0x407B20` when `fg` is 0. `adxf_wait_1ms` at `0x337058` loops `50000` times. `adxf_ChkPrmPt` at `0x337088` rejects a partition id of `256` or more, and a null info pointer, through `ADXERR_CallErrFunc1`, and returns `-3`. The next unnamed body is `0x3370D0`.
 
-`ADXF_LoadPartitionNw` at `0x337170` masks `0x407BE8` with `~0x3F` and tails `ADXF_LoadPtNwEx` at `0x337210` with a 2048-byte buffer. That function passes revision 0 into `adxf_LoadPtBothNw` at `0x337310`. The symbol previously called `ADXF_LoadPtNwEx` at `0x337310` is that body. It rejects a null buffer and a non-positive size with the strings at `0x4B8240` and `0x4B8270`, rejects a second load with `0x4B8298`, and reports an open failure with `0x4B82C8`. `adxf_CloseLdptnwHn` is `0x337510`. `ADXF_StopPtLd` at `0x337560` stops the handle unless `ADXF_GetStat` is already 1, then tails the closer. `ADXF_GetPtStat` at `0x3375C8` tails `ADXF_GetPtStatEx` at `0x3375E0`. The disc body matches the portable `ADXF_GetPtStatEx`: the strings are `0x4B82F8`, `0x4B8330`, `0x4B8338`, `0x4B8370`, and `0x4B83A8`. `adxf_AllocAdxFs` at `0x3379D8` returns the first of 16 objects at `0x4071D8` whose `used` byte is 0. The wrappers at `0x3370D0`, `0x337198`, `0x3371C0`, and `0x3371E8` stay unnamed. `ADXF_Open` is `0x337B70` and `ADXF_OpenAfs` is `0x337CE8`. Both record history through `adxf_SetCmdHstry`, call `adxf_CreateAdxFs`, and close the handle when the file-info call fails. `adxf_SetAfsFileInfo` is `0x337C10`. `adxf_CloseSjStm` is `0x337D88`. `ADXF_Close` is `0x337DF8` and clears 68 bytes. `ADXF_CloseAll` is `0x337EB0`. `adxf_read_sj32` is `0x337F10`. `ADXF_ReadSj32` at `0x338010` uses the strings at `0x4B8460`, `0x4B8488`, and `0x4B84B8`, calls `adxf_read_sj32`, and stores 1 in `sjflag`. The symbol previously called `ADXF_ReadNw32` at `0x338010` is that function. The real `ADXF_ReadNw32` is `0x3380B8`, and its strings are `0x4B84E0`, `0x4B8508`, `0x4B8538`, and `0x4B8560`. The tail at `0x3380A0` stays unnamed. `adxf_ExecOne` is `0x338440`. `ADXF_ExecServer` is `0x338508`: the symbol previously called `ADXF_Tell` there walks the 16 objects at `0x4071D8` and tails the unlock at `0x334FA8`. `ADXF_Seek` is `0x338568`. Its strings are `0x4B8678` and `0x4B86A0`, and it records command `6`. `ADXF_Tell` is `0x338680` and returns the seek position at `+0x14` after the string at `0x4B86C8`. `ADXF_GetFnameRange` at `0x338870` passes a stack `dir` into `ADXF_GetFnameRangeEx` at `0x338898`. That function calls `adxf_ChkPrmGfr`, sums the word sizes at `+0x11C` when `rev` is 1 and the halfword sizes at `+0x11A` otherwise, copies 256 bytes of the name through `0x3558C0`, and returns the directory at `+0x110` and the offset at `+0x114`. `ADXF_GetFnameFromPt` at `0x3389F0` returns `fname` at `+0x10`. The store at `0x338A08` stays unnamed.
+`ADXF_LoadPartitionNw` at `0x337170` masks `0x407BE8` with `~0x3F` and tails `ADXF_LoadPtNwEx` at `0x337210` with a 2048-byte buffer. That function passes revision 0 into `adxf_LoadPtBothNw` at `0x337310`. The symbol previously called `ADXF_LoadPtNwEx` at `0x337310` is that body. It rejects a null buffer and a non-positive size with the strings at `0x4B8240` and `0x4B8270`, rejects a second load with `0x4B8298`, and reports an open failure with `0x4B82C8`. `adxf_CloseLdptnwHn` is `0x337510`. `ADXF_StopPtLd` at `0x337560` stops the handle unless `ADXF_GetStat` is already 1, then tails the closer. `ADXF_GetPtStat` at `0x3375C8` tails `ADXF_GetPtStatEx` at `0x3375E0`. The disc body matches the portable `ADXF_GetPtStatEx`: the strings are `0x4B82F8`, `0x4B8330`, `0x4B8338`, `0x4B8370`, and `0x4B83A8`. `adxf_AllocAdxFs` at `0x3379D8` returns the first of 16 objects at `0x4071D8` whose `used` byte is 0. The wrappers at `0x3370D0`, `0x337198`, `0x3371C0`, and `0x3371E8` stay unnamed. `ADXF_Open` is `0x337B70` and `ADXF_OpenAfs` is `0x337CE8`. Both record history through `adxf_SetCmdHstry`, call `adxf_CreateAdxFs`, and close the handle when the file-info call fails. `adxf_SetAfsFileInfo` is `0x337C10`. `adxf_CloseSjStm` is `0x337D88`. `ADXF_Close` is `0x337DF8` and clears 68 bytes. `ADXF_CloseAll` is `0x337EB0`. `adxf_read_sj32` is `0x337F10`. `ADXF_ReadSj32` at `0x338010` uses the strings at `0x4B8460`, `0x4B8488`, and `0x4B84B8`, calls `adxf_read_sj32`, and stores 1 in `sjflag`. The symbol previously called `ADXF_ReadNw32` at `0x338010` is that function. The real `ADXF_ReadNw32` is `0x3380B8`, and its strings are `0x4B84E0`, `0x4B8508`, `0x4B8538`, and `0x4B8560`. The tail at `0x3380A0` stays unnamed. `adxf_ExecOne` is `0x338440`. `ADXF_ExecServer` is `0x338508`: the symbol previously called `ADXF_Tell` there walks the 16 objects at `0x4071D8` and tails the unlock at `0x334FA8`. `ADXF_Seek` is `0x338568`. Its strings are `0x4B8678` and `0x4B86A0`, and it records command `6`. `ADXF_Tell` is `0x338680` and returns the seek position at `+0x14` after the string at `0x4B86C8`. `ADXF_GetFnameRange` at `0x338870` passes a stack `dir` into `ADXF_GetFnameRangeEx` at `0x338898`. That function calls `adxf_ChkPrmGfr`, sums the word sizes at `+0x11C` when `rev` is 1 and the halfword sizes at `+0x11A` otherwise, copies 256 bytes of the name through `0x3558C0`, and returns the directory at `+0x110` and the offset at `+0x114`. `ADXF_GetFnameFromPt` at `0x3389F0` returns `fname` at `+0x10`. The store at `0x338A08` stays unnamed. `ADXF_SetReqRdSct` at `0x338A18` stores the sector count at `+0x2C` unless the handle status is 2, in which case it reports the string at `0x4B87F8`. `ADXT_ExecFsSvr` at `0x338AA0` replaced `Passive18_0044`. It steps `adxt_fssvr_enter_cnt` at `0x409CA8` through the stream, cvFs, SRD, and `ADXF_ExecServer` calls. `ADXT_ConfigVsyncSvr` at `0x338B70` stores its argument at `0x409CD4`. `ADXT_Init` at `0x338C68` clears 3136 bytes at `0x409CE0` and registers `adxt_exec_tsvr`, `adxt_exec_fssvr`, and `adxt_exec_main_thrd`. `ADXT_ResetLibrary` at `0x338DE8` zeroes `adxt_init_cnt` at `0x409CC8` and tails `ADXT_Init`. The tails at `0x338A50`, `0x338A88`, `0x338B40`, and `0x338B58` stay unnamed.
