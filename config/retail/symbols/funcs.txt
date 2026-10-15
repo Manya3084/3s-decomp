@@ -694,6 +694,7 @@ eff94_3000_0 = 0x001C54C0; // type:func size:0xE0
 eff94_3000_4 = 0x001C55A0; // type:func size:0x10
 eff94_4000 = 0x001C55B0; // type:func size:0x110
 effect_94_init = 0x001C56C0; // type:func size:0x1A0
+effect_95_move = 0x001C5860; // type:func size:0x420
 effect_72_init = 0x001F0900; // type:func size:0x50
 effect_98_move = 0x001FDAA0; // type:func size:0xC0
 fight_move = 0x00203990; // type:func size:0x30
