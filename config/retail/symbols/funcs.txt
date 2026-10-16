@@ -4936,6 +4936,7 @@ settle_type_00000 = 0x002D0790; // type:func size:0x250
 settle_type_10000 = 0x002D09E0; // type:func size:0xA0
 settle_type_20000 = 0x002D0A80; // type:func size:0x1C0
 settle_type_40000 = 0x002D0D70; // type:func size:0x260
+move_player_work = 0x002D0FD0; // type:func size:0x210
 AIFF_GetInfo = 0x00331A60; // type:func size:0x38C
 AU_GetInfo = 0x003323C0; // type:func size:0x318
 ADX_ScanInfoCode = 0x00335120; // type:func size:0x80
