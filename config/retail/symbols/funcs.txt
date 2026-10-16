@@ -1330,6 +1330,7 @@ TexRelease_OP = 0x0023B090; // type:func size:0x60
 put_chr2 = 0x0023B0F0; // type:func size:0x100
 opbg_trans = 0x0023B1F0; // type:func size:0x310
 COLOR_COPYn = 0x0023B500; // type:func size:0x60
+TITLE_Init = 0x0023B6E0; // type:func size:0x110
 Wait_Load_Complete3 = 0x00238070; // type:func size:0x80
 After_Bonus = 0x002380F0; // type:func size:0x90
 After_Bonus_1st = 0x00238180; // type:func size:0xC0
