@@ -1373,6 +1373,7 @@ op_bg_move = 0x00240670; // type:func size:0x50
 op_bg0_move = 0x002406C0; // type:func size:0x80
 op_bg0_0000 = 0x00240740; // type:func size:0x80
 op_bg0_0001 = 0x002407C0; // type:func size:0x970
+op_bg0_0002 = 0x00241130; // type:func size:0x170
 AIFF_GetInfo = 0x00331A60; // type:func size:0x38C
 AU_GetInfo = 0x003323C0; // type:func size:0x318
 ADX_ScanInfoCode = 0x00335120; // type:func size:0x80
