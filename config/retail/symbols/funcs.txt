@@ -1677,6 +1677,7 @@ Lose_30000 = 0x0021ACA0; // type:func size:0x220
 Normal_normal_Loser = 0x0021AEC0; // type:func size:0x140
 Judge_normal_loser = 0x0021B000; // type:func size:0x110
 meta_lose_pause = 0x0021B110; // type:func size:0x130
+Game_Management = 0x0021B240; // type:func size:0x90
 jmpRebootProgram = 0x00221A30; // type:func size:0x30
 Pause_1st_Sub = 0x0022B950; // type:func size:0xBD0
 dispControllerWasRemovedMessage = 0x002CF680; // type:func size:0xD0
