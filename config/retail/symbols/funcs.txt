@@ -1257,6 +1257,7 @@ Purge_mmtm_area = 0x00230410; // type:func size:0x50
 Purge_memory_of_list = 0x00230460; // type:func size:0xB0
 Purge_texcash_of_list = 0x00230510; // type:func size:0xB0
 Make_texcash_of_list = 0x002305C0; // type:func size:0xC0
+search_trsptr = 0x00230680; // type:func size:0xA0
 TexRelease = 0x0023AFC0; // type:func size:0xD0
 Wait_Load_Complete3 = 0x00238070; // type:func size:0x80
 Wait_Load_Complete2 = 0x00237FF0; // type:func size:0x80
