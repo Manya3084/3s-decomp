@@ -1233,6 +1233,7 @@ Training_Option = 0x0022CDE0; // type:func size:0x290
 Dummy_Setting = 0x0022CBD0; // type:func size:0x210
 Training_Disp_Sub = 0x0022D070; // type:func size:0x40
 Dummy_Move_Sub = 0x0022D0B0; // type:func size:0xF0
+Dummy_Move_Sub_LR = 0x0022D1A0; // type:func size:0x530
 TexRelease = 0x0023AFC0; // type:func size:0xD0
 Wait_Load_Complete3 = 0x00238070; // type:func size:0x80
 Wait_Load_Complete2 = 0x00237FF0; // type:func size:0x80
