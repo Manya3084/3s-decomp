@@ -1789,6 +1789,7 @@ Dir_Move_Sub2 = 0x00223070; // type:func size:0x230
 Dir_Move_Sub_LR = 0x002232A0; // type:func size:0x4E0
 Setup_Next_Page = 0x00223780; // type:func size:0x5A0
 Save_Direction = 0x00223D20; // type:func size:0x170
+Load_Direction = 0x00223E90; // type:func size:0x1A0
 Pause_1st_Sub = 0x0022B950; // type:func size:0xBD0
 dispControllerWasRemovedMessage = 0x002CF680; // type:func size:0xD0
 Init_ram_control_work = 0x002F66A0; // type:func size:0x170
