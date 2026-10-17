@@ -5323,6 +5323,7 @@ check_stand_up = 0x002ED8F0; // type:func size:0x40
 check_defense_lever = 0x002ED930; // type:func size:0xD0
 check_em_catt = 0x002EDA00; // type:func size:0x110
 check_attbox_dir = 0x002EDB10; // type:func size:0x160
+check_defense_kind = 0x002EDC70; // type:func size:0x1D0
 add_sp_arts_gauge_maxbit = 0x002F02F0; // type:func size:0x170
 AIFF_GetInfo = 0x00331A60; // type:func size:0x38C
 AU_GetInfo = 0x003323C0; // type:func size:0x318
