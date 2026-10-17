@@ -5175,6 +5175,7 @@ Damage_07000 = 0x002E36D0; // type:func size:0x2A0
 remake_initial_speeds = 0x002E3970; // type:func size:0x520
 Damage_12000 = 0x002E3E90; // type:func size:0x280
 Damage_14000 = 0x002E4110; // type:func size:0x140
+Damage_16000 = 0x002E4250; // type:func size:0x180
 add_sp_arts_gauge_maxbit = 0x002F02F0; // type:func size:0x170
 AIFF_GetInfo = 0x00331A60; // type:func size:0x38C
 AU_GetInfo = 0x003323C0; // type:func size:0x318
