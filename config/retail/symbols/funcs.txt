@@ -5189,6 +5189,7 @@ Damage_27000 = 0x002E5390; // type:func size:0xE0
 Damage_28000 = 0x002E5470; // type:func size:0x120
 Damage_29000 = 0x002E5590; // type:func size:0x300
 Damage_30000 = 0x002E5890; // type:func size:0x2A0
+Damage_31000 = 0x002E5B30; // type:func size:0x290
 add_sp_arts_gauge_maxbit = 0x002F02F0; // type:func size:0x170
 AIFF_GetInfo = 0x00331A60; // type:func size:0x38C
 AU_GetInfo = 0x003323C0; // type:func size:0x318
