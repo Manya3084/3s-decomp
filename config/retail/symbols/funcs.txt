@@ -5410,6 +5410,7 @@ shot_data_convert = 0x002F4990; // type:func size:0x90
 shot_data_refresh = 0x002F4A20; // type:func size:0x30
 renbanshot_conpaneshot = 0x002F4A50; // type:func size:0x40
 datacmd_conpanecmd = 0x002F4A90; // type:func size:0x40
+check_renda_cancel = 0x002F4AD0; // type:func size:0x110
 AIFF_GetInfo = 0x00331A60; // type:func size:0x38C
 AU_GetInfo = 0x003323C0; // type:func size:0x318
 ADX_ScanInfoCode = 0x00335120; // type:func size:0x80
