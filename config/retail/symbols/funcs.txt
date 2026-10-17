@@ -5240,6 +5240,7 @@ Normal_40000 = 0x002E8580; // type:func size:0xD0
 Normal_41000 = 0x002E8650; // type:func size:0xE0
 Normal_42000 = 0x002E8730; // type:func size:0x210
 Normal_47000 = 0x002E8940; // type:func size:0x1F0
+Normal_48000 = 0x002E8B30; // type:func size:0x170
 add_sp_arts_gauge_maxbit = 0x002F02F0; // type:func size:0x170
 AIFF_GetInfo = 0x00331A60; // type:func size:0x38C
 AU_GetInfo = 0x003323C0; // type:func size:0x318
