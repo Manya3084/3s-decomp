@@ -5299,6 +5299,7 @@ dm_18000 = 0x002EC310; // type:func size:0x110
 dm_25000 = 0x002EC420; // type:func size:0x80
 process_catch = 0x002EC4A0; // type:func size:0xA0
 process_attack = 0x002EC550; // type:func size:0x1C0
+check_cg_cancel_data = 0x002EC710; // type:func size:0x3B0
 add_sp_arts_gauge_maxbit = 0x002F02F0; // type:func size:0x170
 AIFF_GetInfo = 0x00331A60; // type:func size:0x38C
 AU_GetInfo = 0x003323C0; // type:func size:0x318
