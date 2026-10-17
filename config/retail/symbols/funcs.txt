@@ -5168,6 +5168,7 @@ scdmd_30000 = 0x002E3090; // type:func size:0x70
 scdmd_31000 = 0x002E3100; // type:func size:0x20
 Player_damage = 0x002E3120; // type:func size:0xE0
 setup_damage_process_flags = 0x002E3200; // type:func size:0x80
+Damage_00000 = 0x002E3280; // type:func size:0xC0
 add_sp_arts_gauge_maxbit = 0x002F02F0; // type:func size:0x170
 AIFF_GetInfo = 0x00331A60; // type:func size:0x38C
 AU_GetInfo = 0x003323C0; // type:func size:0x318
