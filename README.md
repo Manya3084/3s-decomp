@@ -14,7 +14,7 @@ The binary this tree rebuilds is the US retail disc ELF, Street Fighter Annivers
 
 ## Progress
 
-7066 functions are named in `config/retail/symbols/funcs.txt`. A name is added when the disc body matches C already in this tree. The anniversary debug ELF (`THIRD_U.BIN`, SHA-1 `cf58495054c31ad852175c66e9ca04d5094f000e`) is a different file. Its password is not in this repository, so `make split` and `make build` cannot match here.
+7068 functions are named in `config/retail/symbols/funcs.txt`. A name is added when the disc body matches C already in this tree. The anniversary debug ELF (`THIRD_U.BIN`, SHA-1 `cf58495054c31ad852175c66e9ca04d5094f000e`) is a different file. Its password is not in this repository, so `make split` and `make build` cannot match here.
 
 The disc has no `.debug` section. `bin/dtk dwarf dump` does not work on `THIRD_U.BIN.retail`.
 
