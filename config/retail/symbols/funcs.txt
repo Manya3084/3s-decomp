@@ -8495,6 +8495,7 @@ flPS2psAddQueue = 0x0035CE1C; // type:func size:0xC4
 flPS2GetStaticVramArea = 0x0035CEE0; // type:func size:0xE0
 flCreateTextureHandle = 0x0035CFC0; // type:func size:0x110
 scePad2SetButtonOrder = 0x00366B88; // type:func size:0xB0
+scePad2StateIntToStr = 0x00366C38; // type:func size:0x38
 MemcardInit = 0x00366C70; // type:func size:0x70
 mc_sync = 0x00366CE0; // type:func size:0x50
 mc_check_card = 0x00366D30; // type:func size:0x290
