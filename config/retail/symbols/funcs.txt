@@ -1,3 +1,6 @@
+_start = 0x00100008; // type:func size:0x218
+_exit = 0x00100220; // type:func size:0x8
+_root = 0x00100228; // type:func size:0x8
 cmd_sem_init = 0x0010E558; // type:func size:0xB8
 cdvd_exit = 0x0010E610; // type:func size:0x178
 PowerOffCB = 0x0010E788; // type:func size:0x78
