@@ -91,6 +91,49 @@ make build-retail
 
 `config/retail/sfiii.retail.yaml` reads `funcs.txt` only. Splat emits a `glabel` for each name there even when `undefined_funcs_auto.txt` omits an inner split. The image still matches.
 
+## Retail variants and retail-only functions
+
+Every function in the retail code range now has a name. A few of them do not follow the "matches C in this tree" rule. They are listed here so nobody mistakes them for matched bodies.
+
+### Retail variants
+
+These disc bodies are the function the name says. The position, callers, and most of the body agree with the C, but the disc version differs from `src/anniversary/`. The C needs to change before any of them can be called matched.
+
+| Function | Address | Difference on the disc |
+| --- | --- | --- |
+| `emLevelRemake` | `0x1975C0` | Extra branch: when a flag is 1, Difficulty 6/7 changes `max` by `exd / 2`. |
+| `Warning_Init` | `0x199C90` | Calls `load_it_use_any_key2` twice. |
+| `effect_00_move` | `0x19ADB0` | Empty `jr ra`. Entry 0 of the effect move table at `0x47ABE0`. |
+| `effect_66_init` | `0x1BA6C0` | Calls the retail-only `effect_66_setup` and does not call `get_my_trans_mode` itself. |
+| `effect_B6_move` | `0x1CB800` | Empty `jr ra`. Entry `B6` of the effect move table at `0x47ADB0`. |
+| `sea_write` | `0x1FDAA0` | Converts with `litodp` where the C uses `fptodp`. |
+| `Menu_Init` | `0x220EC0` | Calls `Setup_BG_General`. |
+| `toSelectGame` | `0x221740` | One more `FadeOut` call. |
+| `Screen_Adjust` | `0x225EE0` | Calls `dspwhPack` twice. The C makes those calls in `Screen_Adjust_Sub`. |
+| `Screen_Adjust_Sub` | `0x2262F0` | No `dspwhPack` calls. They moved up to `Screen_Adjust`. |
+| `SSPutStr_Bigger` | `0x2FA820` | Calls `SSSetUVOffsetForScale` first. |
+| `AcrMain` | `0x34F530` | Different init and frame calls, including `drawLateQuads`. |
+| `save_slot_trans` | `0x36F950` | Calls `setButtonImageColor` and `dispButtonImageLate`, not `dispButtonImage2`. |
+| `save_msg_trans` | `0x3701A0` | Drops the first `KnjLocate`/`KnjPuts`/`sprintf` block. |
+
+### Retail-only functions
+
+The debug ELF and this tree have no counterpart for these. The names describe what the disc body does.
+
+| Function | Address | What it does |
+| --- | --- | --- |
+| `_crt0_head` | `0x100000` | The two register clears before the ELF entry `_start`. |
+| `effect_66_setup` | `0x1BA7B0` | Work setup called by `effect_66_init`. |
+| `clear_key_work` | `0x21A170` | `memset`s the `keyConvert` work and zeroes the pad switch words. Called from `njUserInit`. |
+| `SSSetUVOffsetForScale` | `0x2FA680` | Sets the four UV inset floats that `SSPutStrTexInputB` reads: 0.02 at scale <= 1, else 0.1. |
+| `setButtonImageColor` | `0x301A10` | Stores the colour that `dispButtonImage`, `dispButtonImage2`, and `dispButtonImageLate` read. |
+| `dispButtonImageLate` | `0x301FE0` | `dispButtonImage` that queues its quad with `pushLateQuad`. |
+| `dispBorderedBox` | `0x302290` | Two `njDrawPolygon2D` boxes, an outer and a 1-pixel inset. Used by `save_slot_trans`. |
+| `clearLateQuads` | `0x34F880` | Empties the 4-entry late quad queue. |
+| `pushLateQuad` | `0x34F8E0` | Copies an 84-byte quad and its texture handle into the queue. |
+| `drawLateQuads` | `0x34FA20` | Draws each queued quad with `ps2SeqsRenderQuad_A2`, then clears the queue. Called from `AcrMain`. |
+| `flPS2GetTextureContext` | `0x35F6B0` | Fills a `plContext` from a texture handle for the ppg code. |
+
 ## Anniversary debug ELF
 
 `make split`, `make build`, `tools/m2ctx.py`, and `bin/dtk dwarf dump` need `THIRD_U.BIN`, SHA-1 `cf58495054c31ad852175c66e9ca04d5094f000e`. That file is about 18 MB and contains DWARF. The password is not in this repository. Do not rename `THIRD_U.BIN.retail` to `THIRD_U.BIN`.
